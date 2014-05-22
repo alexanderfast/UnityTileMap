@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using System;
 using System.Linq;
@@ -9,11 +9,17 @@ using UnityTileMap;
 [CustomEditor(typeof(TileMapBehaviour))]
 public class TileMapBehaviourInspector : Editor
 {
+    private const float FLOAT_PICKER_MARGIN = 24f;
+    private const float FLOAT_ITEM_MARGIN = 6f;
+
     [SerializeField]
-    private bool m_showTiles = false;
+    private bool m_showMapSettings;
 
     [SerializeField]
     private bool m_showSprites;
+
+    [SerializeField]
+    private bool m_showPickerSettings;
 
     [SerializeField]
     private bool m_sortSpritesByName;
@@ -27,6 +33,11 @@ public class TileMapBehaviourInspector : Editor
     private int m_tilesY;
     private int m_tileResolution;
     private float m_tileSize;
+    private Vector3 m_mouseHitPos = -Vector3.one;
+    private int m_setTileID = 0;
+    private Rect m_tilePickerPosition = new Rect(0f, 21f, 256f, 320f);
+    private Vector2 m_tilePickerScroll = Vector2.zero;
+    private int m_tilePickerXCount = 4;
 
     private void OnEnable()
     {
@@ -45,49 +56,41 @@ public class TileMapBehaviourInspector : Editor
 
     public override void OnInspectorGUI()
     {
-//		base.OnInspectorGUI();
+        //		base.OnInspectorGUI();
 
-        m_tilesX = EditorGUILayout.IntField(
-            new GUIContent("Tiles X", "The number of tiles on the X axis"),
-            m_tilesX);
-        m_tilesY = EditorGUILayout.IntField(
-            new GUIContent("Tiles Y", "The number of tiles on the Y axis"),
-            m_tilesY);
-        m_tileResolution = EditorGUILayout.IntField(
-            new GUIContent("Tile Resolution", "The number of pixels along each axis on one tile"),
-            m_tileResolution);
-        m_tileSize = EditorGUILayout.FloatField(
-            new GUIContent("Tile Size", "The size of one tile in Unity units"),
-            m_tileSize);
-        if (GUILayout.Button("Resize"))
-            m_tileMap.MeshSettings = new TileMeshSettings(m_tilesX, m_tilesY, m_tileResolution, m_tileSize);
-
-        // TODO make a proper tile editing gui
-        m_showTiles = EditorGUILayout.Foldout(m_showTiles, "Tiles:");
-        if (m_showTiles)
+        m_showMapSettings = EditorGUILayout.Foldout(m_showMapSettings, "Map Settings");
+        if (m_showMapSettings)
         {
-            var nameMap = new Dictionary<int, string>();
-            var tileIds = m_tileSheet.Ids.ToList();
-            foreach (var id in tileIds)
-                nameMap[id] = m_tileSheet.Lookup(id);
+            m_tilesX = EditorGUILayout.IntField(
+                new GUIContent("Tiles X", "The number of tiles on the X axis"),
+                m_tilesX);
+            m_tilesY = EditorGUILayout.IntField(
+                new GUIContent("Tiles Y", "The number of tiles on the Y axis"),
+                m_tilesY);
+            m_tileResolution = EditorGUILayout.IntField(
+                new GUIContent("Tile Resolution", "The number of pixels along each axis on one tile"),
+                m_tileResolution);
+            m_tileSize = EditorGUILayout.FloatField(
+                new GUIContent("Tile Size", "The size of one tile in Unity units"),
+                m_tileSize);
+            if (GUILayout.Button("Resize"))
+                m_tileMap.MeshSettings = new TileMeshSettings(m_tilesX, m_tilesY, m_tileResolution, m_tileSize);
+        }
 
-            var tileNames = nameMap.Values.ToArray();
-            var settings = m_tileMap.MeshSettings;
+        m_showPickerSettings = EditorGUILayout.Foldout(m_showPickerSettings, "Tile Picker Settings");
+        if (m_showPickerSettings)
+        {
+            m_tilePickerXCount = Mathf.Clamp(EditorGUILayout.IntField(
+                new GUIContent("Items Per Row", "The number of items to draw in a row in the Tile Picker Window."),
+                m_tilePickerXCount), 1, int.MaxValue);
 
-            for (int y = 0; y < settings.TilesY; y++)
-            {
-                for (int x = 0; x < settings.TilesX; x++)
-                {
-                    int selected = -1;
-                    var id = m_tileMap[x, y];
-                    if (id >= 0 && nameMap.ContainsKey(id))
-                        selected = Array.IndexOf(tileNames, nameMap[id]);
+            m_tilePickerPosition.width = Mathf.Clamp(EditorGUILayout.FloatField(
+                new GUIContent("Picker Width", "The width of the Tile Picker Window."),
+                m_tilePickerPosition.width), 64f, float.MaxValue);
 
-                    var changed = EditorGUILayout.Popup(string.Format("{0}, {1}", x, y), selected, tileNames);
-                    if (changed != selected)
-                        m_tileMap[x, y] = m_tileSheet.Lookup(nameMap[changed]);
-                }
-            }
+            m_tilePickerPosition.height = Mathf.Clamp(EditorGUILayout.FloatField(
+                new GUIContent("Picker Height", "The height of the Tile Picker Window."),
+                m_tilePickerPosition.height), 128f, float.MaxValue);
         }
 
         bool prominentImportArea = m_tileSheet.Ids.Count() == 0;
@@ -154,11 +157,11 @@ public class TileMapBehaviourInspector : Editor
             case EventType.DragPerform:
                 if (!rect.Contains(evt.mousePosition))
                     return;
-//			if (evt.type != EventType.DragPerform)
-//				return;
+                //			if (evt.type != EventType.DragPerform)
+                //				return;
 
                 DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-//			DragAndDrop.AcceptDrag();
+                //			DragAndDrop.AcceptDrag();
 
                 if (evt.type == EventType.DragPerform)
                 {
@@ -244,5 +247,100 @@ public class TileMapBehaviourInspector : Editor
         var path = AssetDatabase.GetAssetPath(texture);
         var textureImporter = (TextureImporter)AssetImporter.GetAtPath(path);
         return textureImporter.isReadable;
+    }
+
+    private void OnSceneGUI()
+    {
+        m_tilePickerPosition = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), m_tilePickerPosition,
+                                                OnTilePickerWindow, new GUIContent("Select a Tile"));
+        DrawGrid();
+        HandleMouseEvents();
+    }
+
+    private void OnTilePickerWindow(int id)
+    {
+        int[] ids = m_tileSheet.Ids.ToArray();
+
+        m_tilePickerScroll = EditorGUILayout.BeginScrollView(m_tilePickerScroll, GUIStyle.none, GUI.skin.verticalScrollbar);
+        {
+            float itemSize = ((m_tilePickerPosition.width - FLOAT_PICKER_MARGIN) / m_tilePickerXCount) - FLOAT_ITEM_MARGIN;
+            for (int i = 0; i < ids.Length; i += m_tilePickerXCount)
+            {
+                EditorGUILayout.BeginHorizontal();
+                for (int c = 0; c < m_tilePickerXCount; c++)
+                {
+                    if (i + c >= ids.Length)
+                        break;
+
+                    int index = i + c;
+                    GUIContent content = new GUIContent(GetThumbnail(m_tileSheet.Get(ids[index])));
+
+                    if (GUILayout.Toggle(m_setTileID == ids[index], content, GUI.skin.button, GUILayout.Width(itemSize), GUILayout.Height(itemSize)))
+                        m_setTileID = ids[index];
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+        EditorGUILayout.EndScrollView();
+
+        //GUI.DragWindow(new Rect(0f, 0f, m_tilePickerPosition.width, 21f));
+        GUI.DragWindow(new Rect(0f, 0f, m_tilePickerPosition.width, m_tilePickerPosition.height));
+    }
+
+    private void DrawGrid()
+    {
+        float gridWidth = m_tilesX * m_tileSize;
+        float gridHeight = m_tilesY * m_tileSize;
+
+        Handles.color = Color.blue;
+        for (int x = 0; x <= m_tilesX; x++)
+        {
+            float xPos = (x * m_tileSize) + m_tileMap.transform.position.x;
+            Handles.DrawLine(new Vector3(xPos, m_tileMap.transform.position.y, m_tileMap.transform.position.z),
+                             new Vector3(xPos, m_tileMap.transform.position.y + gridWidth, m_tileMap.transform.position.z));
+        }
+
+        for (int y = 0; y <= m_tilesY; y++)
+        {
+            float yPos = (y * m_tileSize) + m_tileMap.transform.position.y;
+            Handles.DrawLine(new Vector3(m_tileMap.transform.position.x, yPos, m_tileMap.transform.position.z),
+                             new Vector3(m_tileMap.transform.position.x + gridHeight, yPos, m_tileMap.transform.position.z));
+        }
+        Handles.color = Color.white;
+    }
+
+    private void HandleMouseEvents()
+    {
+        Event e = Event.current;
+        if ((e.type == EventType.MouseMove && e.modifiers == EventModifiers.Shift) || (e.type == EventType.MouseDown && e.button == 1))
+        {
+            if (UpdateMouseHit())
+            {
+                int tileX = Mathf.FloorToInt(m_mouseHitPos.x);
+                int tileY = Mathf.FloorToInt(m_mouseHitPos.y);
+                tileY = m_tilesY - (tileY + 1);
+
+                m_tileMap[tileX, tileY] = m_setTileID;
+
+                e.Use();
+            }
+        }
+    }
+
+    private bool UpdateMouseHit()
+    {
+        var p = new Plane(m_tileMap.transform.TransformDirection(Vector3.forward), m_tileMap.transform.position);
+        var ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
+
+        Vector3 hit = new Vector3();
+        float distance;
+        if (p.Raycast(ray, out distance))
+            hit = ray.origin + (ray.direction.normalized * distance);
+
+        m_mouseHitPos = m_tileMap.transform.InverseTransformPoint(hit);
+        m_mouseHitPos = new Vector3(m_mouseHitPos.x * m_tileSize, m_mouseHitPos.y * m_tileSize, m_mouseHitPos.z);
+
+        return (m_mouseHitPos.x >= 0 && m_mouseHitPos.x < m_tilesX * m_tileSize &&
+                m_mouseHitPos.y >= 0 && m_mouseHitPos.y < m_tilesY * m_tileSize);
     }
 }
