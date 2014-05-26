@@ -104,7 +104,7 @@ namespace UnityTileMap
         /// </summary>
         public Rect GetTileBoundsLocal(int x, int y)
         {
-            return MeshGrid.GetTileBoundsLocal(x, y);
+            return MeshGrid.Chunk.GetTileBoundsLocal(x, y);
         }
 
         /// <summary>
@@ -113,14 +113,14 @@ namespace UnityTileMap
         /// </summary>
         public Rect GetTileBoundsWorld(int x, int y)
         {
-            return MeshGrid.GetTileBoundsWorld(x, y);
+            return MeshGrid.Chunk.GetTileBoundsWorld(x, y);
         }
 
         public void PaintTile(int x, int y, Color color)
         {
             if (m_tileMeshSettings.MeshMode != MeshMode.SingleQuad)
                 throw new InvalidOperationException("Painting tiles is only supported in SingleQuad MeshMode");
-            var child = MeshGrid.Child;
+            var child = MeshGrid.Chunk;
             if (child == null)
                 throw new InvalidOperationException("MeshGrid has not yet been created.");
             child.SetTile(x, y, color);
@@ -130,13 +130,13 @@ namespace UnityTileMap
         {
             if (sprite == null)
                 throw new ArgumentNullException("sprite");
-            MeshGrid.SetTile(x, y, sprite);
+            MeshGrid.Chunk.SetTile(x, y, sprite);
         }
 
         private void SetTile(int x, int y, int id)
         {
             var sprite = m_tileSheet.Get(id);
-            MeshGrid.SetTile(x, y, sprite);
+            MeshGrid.Chunk.SetTile(x, y, sprite);
         }
     }
 }

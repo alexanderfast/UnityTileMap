@@ -1,10 +1,11 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 using System;
 using System.Linq;
-using System.Collections;
 
 [Serializable]
-internal class Grid<T>
+internal class Grid<T> : IEnumerable<T>
 {
     [SerializeField]
     private int m_sizeX = -1;
@@ -61,13 +62,27 @@ internal class Grid<T>
     {
         if (m_data == null)
             throw new InvalidOperationException("Size has not been set");
-        //if (x < 0)
-        //    throw new ArgumentException(string.Format("X ({0}) is less than 0", x));
-        //if (x )
-        //    throw new ArgumentException(string.Format("X ({0}) is greater than size x-1 ({1})", x, m_sizeX));
-        //if (y < 0)
-        //    throw new ArgumentException(string.Format("Y ({0}) is less than 0", y));
-        //if (y < 0)
-        //    throw new ArgumentException(string.Format("Y ({0}) is greater than size y ({1})", y, m_sizeY));
+        if (x < 0)
+            throw new ArgumentException(string.Format("X ({0}) is less than 0", x));
+        if (x >= m_sizeX)
+            throw new ArgumentException(string.Format("X ({0}) is greater than size x-1 ({1})", x, m_sizeX));
+        if (y < 0)
+            throw new ArgumentException(string.Format("Y ({0}) is less than 0", y));
+        if (y >= m_sizeY)
+            throw new ArgumentException(string.Format("Y ({0}) is greater than size y-1 ({1})", y, m_sizeY));
     }
+
+    #region Implementation of IEnumerable
+
+    public IEnumerator<T> GetEnumerator()
+    {
+        return ((IEnumerable<T>)m_data).GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+
+    #endregion
 }

@@ -4,82 +4,183 @@ using System;
 namespace UnityTileMap
 {
     // TODO this class is supposed to handle the logic for splitting up the tilemap into parts, but its currently just an empty shell
+    // TODO rename to TileChunkManager or something better
     public class TileMeshGrid
     {
+        private const string ChunkNameFormat = "Mesh@{0},{1}";
+
+        /// <summary>
+        /// All chunks are children of the TileMapBehaviour GameObject transform.
+        /// </summary>
         private TileMapBehaviour m_parent;
+
+        /// <summary>
+        /// All chunks use the same settings.
+        /// </summary>
         private TileMeshSettings m_settings;
-        private TileMeshBehaviour m_child; // TODO should support more than one
+
+        /// <summary>
+        /// Chunk cache, these should be able to be created and destroyed at will since the actual data
+        /// (stating which tile id is on which coordinate) lives in the TileMapData class.
+        /// </summary>
+        private readonly Grid<TileMeshBehaviour> m_chunks = new Grid<TileMeshBehaviour>();
+
+        /// <summary>
+        /// The number of tiles on each chunk.
+        /// </summary>
+        public Vector2 ChunkSize
+        {
+            get
+            {
+                if (m_settings == null)
+                    return Vector2.zero;
+
+                // the size of each chunk is defined in settings
+                return new Vector2(m_settings.TilesX, m_settings.TilesY);
+            }
+        }
 
         public bool Initialized { get; private set; }
 
+        // TODO temporary utility property to use while the grid only supports one chunk
+        public TileMeshBehaviour Chunk
+        {
+            get
+            {
+                var chunk = GetChunk(0, 0);
+
+                // TODO horrible hack to make sure settings are applied, shouldnt be needed
+                if (chunk.Settings == null)
+                {
+                    //Debug.Log("Force applying settings");
+                    chunk.Settings = m_settings;
+                }
+                return chunk;
+            }
+        }
+
         public TileMeshSettings Settings
         {
-            get { return m_child == null ? null : m_child.Settings; }
+            get { return m_settings; }
             set
             {
                 if (value == null)
                     throw new ArgumentNullException("value");
-        
+                if (m_settings != null && m_settings.Equals(value))
+                    return;
                 m_settings = value;
-                RecreateChild();
-            }
-        }
 
-        public TileMeshBehaviour Child
-        {
-            get { return m_child; }
+                // apply the settings to all children
+                foreach (TileMeshBehaviour child in m_chunks)
+                    child.Settings = m_settings;
+            }
         }
 
         public void Initialize(TileMapBehaviour parent, TileMeshSettings settings)
         {
+            if (Initialized)
+                throw new InvalidOperationException("Already initialized");
             m_parent = parent;
             m_settings = settings;
             Initialized = true;
-            RecreateChild();
+
+            // setup a single chunk
+            SetNumChunks(1, 1);
+            GetChunk(0, 0);
         }
 
-        public void DeleteAllChildren()
+        public void DeleteAllChunks()
         {
             for (int i = 0; i < m_parent.transform.childCount; i++)
             {
                 Transform child = m_parent.transform.GetChild(i);
+
+                // TODO should children of the TileMap thats not chunks be allowed?
+                if (!child.name.StartsWith("Mesh"))
+                    continue;
                 UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
         }
 
-        private void RecreateChild()
+        public void DeleteChunk(int x, int y)
         {
-            DeleteAllChildren();
-
-            if (m_parent.transform.childCount == 0)
+            var chunkName = string.Format(ChunkNameFormat, x, y);
+            for (int i = 0; i < m_parent.transform.childCount; i++)
             {
-                // add the one and only mesh
-                var type = typeof(TileMeshBehaviour);
-                var mesh = new GameObject("Mesh@0,0", type);
-                mesh.transform.parent = m_parent.transform;
-                mesh.transform.localPosition = Vector3.zero;
-                m_child = (TileMeshBehaviour)mesh.GetComponent(type);
-                m_child.Settings = m_settings;
-            }
-            else
-            {
-                throw new ArgumentException("Didn't cleane up children");
+                Transform child = m_parent.transform.GetChild(i);
+                if (child.name == chunkName)
+                {
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
+                    return;
+                }
             }
         }
 
-        public void SetTile(int x, int y, Sprite sprite)
+        // TODO make public once more than one is supported
+        /// <summary>
+        /// Creates the array that holds the chunks.
+        /// </summary>
+        private void SetNumChunks(int x, int y)
         {
-            m_child.SetTile(x, y, sprite);
+            // TODO this currently means that the number of chunks is known which doesnt fit the usecase of infinite levels
+            m_chunks.SetSize(x, y, null);
         }
 
-        public Rect GetTileBoundsLocal(int x, int y)
+        /// <summary>
+        /// Finds the chunk that holds the specified tile.
+        /// </summary>
+        internal TileMeshBehaviour GetChunk(int tileX, int tileY)
         {
-            return m_child.GetTileBoundsLocal(x, y);
+            int chunkX = tileX / m_settings.TilesX;
+            int chunkY = tileY / m_settings.TilesY;
+
+            //Debug.Log(string.Format("Finding chunk: {0}, {1}", chunkX, chunkY));
+
+            // check cache for chunk
+            var chunk = m_chunks[chunkX, chunkY];
+            if (chunk != null)
+                return chunk;
+
+            //Debug.Log("Children: " + m_parent.transform.childCount);
+
+            // traverse children of parent
+            var chunkName = string.Format(ChunkNameFormat, chunkX, chunkY);
+            for (int i = 0; i < m_parent.transform.childCount; i++)
+            {
+                var child = m_parent.transform.GetChild(i);
+                if (child.name == chunkName)
+                {
+                    var mesh = child.GetComponent<TileMeshBehaviour>();
+                    if (mesh == null)
+                    {
+                        Debug.LogError(string.Format("Child '{0}' was found but didn't have a TileMeshBehaviour"));
+                        return null;
+                        // TODO create and add it?
+                    }
+                    m_chunks[chunkX, chunkY] = mesh;
+                    return mesh;
+                }
+            }
+
+            // otherwise create it
+            return CreateChunk(chunkX, chunkY);
         }
 
-        public Rect GetTileBoundsWorld(int x, int y)
+        private TileMeshBehaviour CreateChunk(int x, int y)
         {
-            return m_child.GetTileBoundsWorld(x, y);
+            var gameObject = new GameObject(string.Format(ChunkNameFormat, x, y), typeof(TileMeshBehaviour));
+            gameObject.transform.parent = m_parent.transform;
+
+            // TODO calculate proper position based on chunksize and tilesize
+            gameObject.transform.localPosition = Vector3.zero;
+
+            // apply settings
+            var mesh = gameObject.GetComponent<TileMeshBehaviour>();
+            mesh.Settings = m_settings;
+
+            // cache
+            m_chunks[x, y] = mesh;
+            return mesh;
         }
     }
 }
