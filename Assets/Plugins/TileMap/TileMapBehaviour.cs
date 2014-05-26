@@ -23,8 +23,6 @@ namespace UnityTileMap
             get { return m_tileMeshSettings; }
             set
             {
-                //Debug.Log("Applying settings");
-
                 MeshGrid.Settings = value;
                 m_tileMeshSettings = value;
                 m_tileMapData.SetSize(m_tileMeshSettings.TilesX, m_tileMeshSettings.TilesY);
@@ -53,7 +51,7 @@ namespace UnityTileMap
         protected virtual void Awake()
         {
             if (m_tileMeshSettings == null)
-                m_tileMeshSettings = new TileMeshSettings(2, 2, 16, 1f);
+                m_tileMeshSettings = new TileMeshSettings(2, 2, 16, 1f, MeshMode.SingleQuad);
 
             if (m_tileSheet == null)
                 m_tileSheet = ScriptableObject.CreateInstance<TileSheet>();
@@ -83,8 +81,7 @@ namespace UnityTileMap
                         var id = m_tileMapData[x, y];
                         if (id < 0)
                             continue;
-                        var sprite = m_tileSheet.Get(id);
-                        SetTile(x, y, sprite);
+                        SetTile(x, y, id);
                     }
                 }
             }
@@ -96,10 +93,7 @@ namespace UnityTileMap
             set
             {
                 //Debug.Log(string.Format("Setting tile ({0}, {1}) = {2}", x, y, value));
-
-                var sprite = m_tileSheet.Get(value);
-                SetTile(x, y, sprite);
-
+                SetTile(x, y, value);
                 m_tileMapData[x, y] = value;
             }
         }
@@ -122,24 +116,27 @@ namespace UnityTileMap
             return MeshGrid.GetTileBoundsWorld(x, y);
         }
 
-        /// <summary>
-        /// Paint a tile in a solid color.
-        /// </summary>
-        /// <remarks>
-        /// Painted tiles cannot be serialized.
-        /// </remarks>
         public void PaintTile(int x, int y, Color color)
         {
-            MeshGrid.SetTile(x, y, color);
+            if (m_tileMeshSettings.MeshMode != MeshMode.SingleQuad)
+                throw new InvalidOperationException("Painting tiles is only supported in SingleQuad MeshMode");
+            var child = MeshGrid.Child;
+            if (child == null)
+                throw new InvalidOperationException("MeshGrid has not yet been created.");
+            child.SetTile(x, y, color);
         }
 
         private void SetTile(int x, int y, Sprite sprite)
         {
             if (sprite == null)
                 throw new ArgumentNullException("sprite");
-            Rect rect = sprite.rect;
-            Color[] colors = sprite.texture.GetPixels((int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height);
-            MeshGrid.SetTile(x, y, colors);
+            MeshGrid.SetTile(x, y, sprite);
+        }
+
+        private void SetTile(int x, int y, int id)
+        {
+            var sprite = m_tileSheet.Get(id);
+            MeshGrid.SetTile(x, y, sprite);
         }
     }
 }
