@@ -33,6 +33,8 @@ public class TileMapBehaviourInspector : Editor
     private int m_tilesY;
     private int m_tileResolution;
     private float m_tileSize;
+    private MeshMode m_meshMode;
+
     private Vector3 m_mouseHitPos = -Vector3.one;
     private int m_setTileID = 0;
     private Rect m_tilePickerPosition = new Rect(0f, 21f, 256f, 320f);
@@ -51,6 +53,7 @@ public class TileMapBehaviourInspector : Editor
             m_tilesY = meshSettings.TilesY;
             m_tileResolution = meshSettings.TileResolution;
             m_tileSize = meshSettings.TileSize;
+            m_meshMode = meshSettings.MeshMode;
         }
     }
 
@@ -73,8 +76,9 @@ public class TileMapBehaviourInspector : Editor
             m_tileSize = EditorGUILayout.FloatField(
                 new GUIContent("Tile Size", "The size of one tile in Unity units"),
                 m_tileSize);
+            m_meshMode = (MeshMode)EditorGUILayout.EnumPopup("Mesh Mode", m_meshMode);
             if (GUILayout.Button("Resize"))
-                m_tileMap.MeshSettings = new TileMeshSettings(m_tilesX, m_tilesY, m_tileResolution, m_tileSize);
+                m_tileMap.MeshSettings = new TileMeshSettings(m_tilesX, m_tilesY, m_tileResolution, m_tileSize, m_meshMode);
         }
 
         m_showPickerSettings = EditorGUILayout.Foldout(m_showPickerSettings, "Tile Picker Settings");
@@ -318,7 +322,6 @@ public class TileMapBehaviourInspector : Editor
             {
                 int tileX = Mathf.FloorToInt(m_mouseHitPos.x);
                 int tileY = Mathf.FloorToInt(m_mouseHitPos.y);
-                tileY = m_tilesY - (tileY + 1);
 
                 m_tileMap[tileX, tileY] = m_setTileID;
 
