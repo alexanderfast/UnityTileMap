@@ -153,7 +153,7 @@ namespace UnityTileMap
                     var mesh = child.GetComponent<TileMeshBehaviour>();
                     if (mesh == null)
                     {
-                        Debug.LogError(string.Format("Child '{0}' was found but didn't have a TileMeshBehaviour"));
+                        Debug.LogError(string.Format("Child '{0}' was found but didn't have a TileMeshBehaviour", child.name));
                         return null;
                         // TODO create and add it?
                     }
@@ -168,7 +168,21 @@ namespace UnityTileMap
 
         private TileMeshBehaviour CreateChunk(int x, int y)
         {
-            var gameObject = new GameObject(string.Format(ChunkNameFormat, x, y), typeof(TileMeshBehaviour));
+            // TODO should this be moved to a factory?
+            Type behaviourType;
+            switch (m_settings.MeshMode)
+            {
+                case MeshMode.SingleQuad:
+                    behaviourType = typeof(TileMeshSingleQuadBehaviour);
+                    break;
+                case MeshMode.QuadGrid:
+                    behaviourType = typeof(TileMeshQuadGridBehaviour);
+                    break;
+                default:
+                    throw new InvalidOperationException("Mesh mode not implemented: " + m_settings.MeshMode);
+            }
+
+            var gameObject = new GameObject(string.Format(ChunkNameFormat, x, y), behaviourType);
             gameObject.transform.parent = m_parent.transform;
 
             // TODO calculate proper position based on chunksize and tilesize

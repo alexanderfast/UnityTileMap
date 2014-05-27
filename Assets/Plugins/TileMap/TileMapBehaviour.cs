@@ -118,12 +118,13 @@ namespace UnityTileMap
 
         public void PaintTile(int x, int y, Color color)
         {
-            if (m_tileMeshSettings.MeshMode != MeshMode.SingleQuad)
-                throw new InvalidOperationException("Painting tiles is only supported in SingleQuad MeshMode");
             var child = MeshGrid.Chunk;
             if (child == null)
                 throw new InvalidOperationException("MeshGrid has not yet been created.");
-            child.SetTile(x, y, color);
+            var singleQuad = child as TileMeshSingleQuadBehaviour;
+            if (singleQuad == null)
+                throw new InvalidOperationException("Painting tiles is only supported in SingleQuad MeshMode");
+            singleQuad.SetTile(x, y, color);
         }
 
         private void SetTile(int x, int y, Sprite sprite)
