@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 using System;
 
 namespace UnityTileMap
@@ -64,15 +65,24 @@ namespace UnityTileMap
             get { return m_settings; }
             set
             {
-                if (value == null)
-                    throw new ArgumentNullException("value");
-                if (m_settings != null && m_settings.Equals(value))
-                    return;
+                if (!Initialized)
+                    throw new InvalidOperationException("The TileMeshGrid needs to be initialized before applying settings");
+
                 m_settings = value;
 
-                // apply the settings to all children
-                foreach (TileMeshBehaviour child in m_chunks)
-                    child.Settings = m_settings;
+                var chunks = m_chunks.Where(x => x != null).ToList();
+                if (chunks.Count == 0)
+                {
+                    // setup a single chunk
+                    SetNumChunks(1, 1);
+                    GetChunk(0, 0).Settings = value;
+                }
+                else
+                {
+                    // apply the settings to all children);
+                    foreach (TileMeshBehaviour child in chunks)
+                        child.Settings = m_settings;
+                }
             }
         }
 
@@ -83,10 +93,6 @@ namespace UnityTileMap
             m_parent = parent;
             m_settings = settings;
             Initialized = true;
-
-            // setup a single chunk
-            SetNumChunks(1, 1);
-            GetChunk(0, 0);
         }
 
         public void DeleteAllChunks()
@@ -100,6 +106,7 @@ namespace UnityTileMap
                     continue;
                 UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
+            m_chunks.Clear();
         }
 
         public void DeleteChunk(int x, int y)
@@ -111,6 +118,7 @@ namespace UnityTileMap
                 if (child.name == chunkName)
                 {
                     UnityEngine.Object.DestroyImmediate(child.gameObject);
+                    m_chunks[x, y] = null;
                     return;
                 }
             }

@@ -25,7 +25,7 @@ namespace UnityTileMap
                     throw new ArgumentNullException("value");
                 if (m_settings != null && m_settings.Equals(value))
                 {
-                    Debug.Log("Settings equal, doing nothing");
+                    //Debug.Log("Settings equal, doing nothing");
                     return;
                 }
 

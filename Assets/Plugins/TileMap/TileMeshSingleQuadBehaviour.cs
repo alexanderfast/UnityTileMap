@@ -17,13 +17,12 @@ namespace UnityTileMap
             get { return base.Settings; }
             set
             {
+                // TODO a bit copy and paste code, but we only want to recreate the texture if settings changed
                 if (value == null)
                     throw new ArgumentNullException("value");
                 if (base.Settings != null && base.Settings.Equals(value))
-                {
-                    Debug.Log("Settings equal, doing nothing");
                     return;
-                }
+                base.Settings = value;
                 CreateTexture();
             }
         }

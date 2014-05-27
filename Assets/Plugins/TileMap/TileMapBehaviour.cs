@@ -16,7 +16,35 @@ namespace UnityTileMap
         [SerializeField]
         private TileSheet m_tileSheet;
 
+        [SerializeField]
+        private bool m_activeInEditMode;
+
         private TileMeshGrid m_meshGrid;
+
+        /// <summary>
+        /// When ActiveInEditMode the mesh for the tilemap will be created and rendered in edit mode.
+        /// This is useful if you want to use the map editing GUI.
+        /// A benefit to disabling it is a smaller file size on the scene (especially when using MeshMode.SingleQuad),
+        /// since the data is still stored and the mesh will be generated when entering play mode.
+        /// </summary>
+        public bool ActiveInEditMode
+        {
+            get { return m_activeInEditMode; }
+            set
+            {
+                if (m_activeInEditMode == value)
+                    return;
+                m_activeInEditMode = value;
+
+                if (Application.isEditor)
+                {
+                    if (m_activeInEditMode)
+                        CreateMesh();
+                    else
+                        DestroyMesh();
+                }
+            }
+        }
 
         public TileMeshSettings MeshSettings
         {
@@ -47,6 +75,11 @@ namespace UnityTileMap
                 return m_meshGrid;
             }
         }
+        
+        public bool HasMesh
+        {
+            get { return MeshGrid.Chunk != null; }
+        }
 
         protected virtual void Awake()
         {
@@ -61,30 +94,15 @@ namespace UnityTileMap
                 m_meshGrid = new TileMeshGrid();
                 m_meshGrid.Initialize(this, m_tileMeshSettings);
             }
-            else
-            {
-                m_meshGrid.Settings = m_tileMeshSettings;
-            }
 
             if (m_tileMapData == null)
             {
                 m_tileMapData = new TileMapData();
                 m_tileMapData.SetSize(m_tileMeshSettings.TilesX, m_tileMeshSettings.TilesY);
             }
-            else
-            {
-                // restore tilemap data
-                for (int x = 0; x < m_tileMapData.SizeX; x++)
-                {
-                    for (int y = 0; y < m_tileMapData.SizeY; y++)
-                    {
-                        var id = m_tileMapData[x, y];
-                        if (id < 0)
-                            continue;
-                        SetTile(x, y, id);
-                    }
-                }
-            }
+
+            if (Application.isPlaying || m_activeInEditMode)
+                CreateMesh();
         }
 
         public int this[int x, int y]
@@ -96,6 +114,32 @@ namespace UnityTileMap
                 SetTile(x, y, value);
                 m_tileMapData[x, y] = value;
             }
+        }
+
+        public void CreateMesh()
+        {
+            // initialize mesh grid
+            if (!MeshGrid.Initialized)
+                MeshGrid.Initialize(this, m_tileMeshSettings);
+            else
+                MeshGrid.Settings = m_tileMeshSettings;
+
+            // restore tilemap data
+            for (int x = 0; x < m_tileMapData.SizeX; x++)
+            {
+                for (int y = 0; y < m_tileMapData.SizeY; y++)
+                {
+                    var id = m_tileMapData[x, y];
+                    if (id < 0)
+                        continue;
+                    SetTile(x, y, id);
+                }
+            }
+        }
+
+        public void DestroyMesh()
+        {
+            MeshGrid.DeleteAllChunks();
         }
 
         /// <summary>

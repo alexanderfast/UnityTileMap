@@ -34,6 +34,7 @@ public class TileMapBehaviourInspector : Editor
     private int m_tileResolution;
     private float m_tileSize;
     private MeshMode m_meshMode;
+    private bool m_activeInEditMode;
 
     private Vector3 m_mouseHitPos = -Vector3.one;
     private int m_setTileID = 0;
@@ -55,6 +56,7 @@ public class TileMapBehaviourInspector : Editor
             m_tileSize = meshSettings.TileSize;
             m_meshMode = meshSettings.MeshMode;
         }
+        m_activeInEditMode = m_tileMap.ActiveInEditMode;
     }
 
     public override void OnInspectorGUI()
@@ -64,6 +66,13 @@ public class TileMapBehaviourInspector : Editor
         m_showMapSettings = EditorGUILayout.Foldout(m_showMapSettings, "Map Settings");
         if (m_showMapSettings)
         {
+            m_activeInEditMode = EditorGUILayout.Toggle("Active In Edit Mode", m_activeInEditMode);
+            if (m_tileMap.ActiveInEditMode != m_activeInEditMode)
+            {
+                m_tileMap.ActiveInEditMode = m_activeInEditMode;
+                OnSceneGUI(); // force redraw map editor box
+            }
+
             m_tilesX = EditorGUILayout.IntField(
                 new GUIContent("Tiles X", "The number of tiles on the X axis"),
                 m_tilesX);
@@ -77,8 +86,17 @@ public class TileMapBehaviourInspector : Editor
                 new GUIContent("Tile Size", "The size of one tile in Unity units"),
                 m_tileSize);
             m_meshMode = (MeshMode)EditorGUILayout.EnumPopup("Mesh Mode", m_meshMode);
-            if (GUILayout.Button("Resize"))
+
+            if (GUILayout.Button("Create/Recreate Mesh"))
+            {
                 m_tileMap.MeshSettings = new TileMeshSettings(m_tilesX, m_tilesY, m_tileResolution, m_tileSize, m_meshMode);
+
+                // if settings didnt change the mesh wouldnt be created, force creation
+                if (!m_tileMap.HasMesh)
+                    m_tileMap.CreateMesh();
+            }
+            if (GUILayout.Button("Destroy Mesh (keep data)"))
+                m_tileMap.DestroyMesh();
         }
 
         m_showPickerSettings = EditorGUILayout.Foldout(m_showPickerSettings, "Tile Picker Settings");
@@ -255,6 +273,12 @@ public class TileMapBehaviourInspector : Editor
 
     private void OnSceneGUI()
     {
+        // TODO the scene gui should only be enabled if m_tileMap.ActiveInEditMode, but I havent found a good way to toggle
+        //if (!m_tileMap.ActiveInEditMode)
+        //    return;
+
+        // TODO ive found the EditorWindow base class which is probably a better approach to show this
+        // http://docs.unity3d.com/ScriptReference/EditorWindow.html
         m_tilePickerPosition = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), m_tilePickerPosition,
                                                 OnTilePickerWindow, new GUIContent("Select a Tile"));
         DrawGrid();

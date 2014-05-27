@@ -3,8 +3,8 @@ using UnityTileMap;
 
 public class Demo5Script : MonoBehaviour
 {
-    public int X = 0;
-    public int Y = 0;
+    public int TileX = 0;
+    public int TileY = 0;
 
     private TileMapBehaviour m_tileMap;
 
@@ -22,7 +22,7 @@ public class Demo5Script : MonoBehaviour
         if (m_tileMap != null)
         {
             // Update position
-            var tileBounds = m_tileMap.GetTileBoundsWorld(X, Y);
+            var tileBounds = m_tileMap.GetTileBoundsWorld(TileX, TileY);
             transform.position = new Vector3(tileBounds.xMin, tileBounds.yMin, 0.0f);
         }
     }

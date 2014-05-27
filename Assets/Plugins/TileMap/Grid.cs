@@ -7,6 +7,8 @@ using System.Linq;
 [Serializable]
 internal class Grid<T> : IEnumerable<T>
 {
+    private static readonly T[] Empty = new T[] {};
+
     [SerializeField]
     private int m_sizeX = -1;
 
@@ -27,6 +29,14 @@ internal class Grid<T> : IEnumerable<T>
         m_sizeX = x;
         m_sizeY = y;
         m_data = Enumerable.Repeat(defaultValue, x * y).ToArray();
+    }
+
+    public void Clear()
+    {
+        if (m_data == null)
+            return;
+        for (int i = 0; i < m_data.Length; i++)
+            m_data[i] = default(T);
     }
 
     public int SizeX
@@ -76,6 +86,8 @@ internal class Grid<T> : IEnumerable<T>
 
     public IEnumerator<T> GetEnumerator()
     {
+        if (m_data == null)
+            return ((IEnumerable<T>)Empty).GetEnumerator();
         return ((IEnumerable<T>)m_data).GetEnumerator();
     }
 
