@@ -34,6 +34,7 @@ public class TileMapBehaviourInspector : Editor
     private int m_tileResolution;
     private float m_tileSize;
     private MeshMode m_meshMode;
+    private TextureFormat m_textureFormat;
     private bool m_activeInEditMode;
 
     private Vector3 m_mouseHitPos = -Vector3.one;
@@ -55,6 +56,7 @@ public class TileMapBehaviourInspector : Editor
             m_tileResolution = meshSettings.TileResolution;
             m_tileSize = meshSettings.TileSize;
             m_meshMode = meshSettings.MeshMode;
+            m_textureFormat = meshSettings.TextureFormat;
         }
         m_activeInEditMode = m_tileMap.ActiveInEditMode;
     }
@@ -86,10 +88,11 @@ public class TileMapBehaviourInspector : Editor
                 new GUIContent("Tile Size", "The size of one tile in Unity units"),
                 m_tileSize);
             m_meshMode = (MeshMode)EditorGUILayout.EnumPopup("Mesh Mode", m_meshMode);
+            m_textureFormat = (TextureFormat)EditorGUILayout.EnumPopup("Texture Format", m_textureFormat);
 
             if (GUILayout.Button("Create/Recreate Mesh"))
             {
-                m_tileMap.MeshSettings = new TileMeshSettings(m_tilesX, m_tilesY, m_tileResolution, m_tileSize, m_meshMode);
+                m_tileMap.MeshSettings = new TileMeshSettings(m_tilesX, m_tilesY, m_tileResolution, m_tileSize, m_meshMode, m_textureFormat);
 
                 // if settings didnt change the mesh wouldnt be created, force creation
                 if (!m_tileMap.HasMesh)
@@ -255,7 +258,7 @@ public class TileMapBehaviourInspector : Editor
         if (!m_thumbnailCache.TryGetValue(sprite.name, out texture))
         {
             var rect = sprite.textureRect;
-            texture = new Texture2D((int)rect.width, (int)rect.height, TextureFormat.RGB24, false);
+            texture = new Texture2D((int)rect.width, (int)rect.height, m_textureFormat, false);
             texture.SetPixels(sprite.texture.GetPixels((int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height));
             texture.Apply(false, true);
 
