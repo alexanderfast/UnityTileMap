@@ -132,7 +132,7 @@ namespace UnityTileMap
             m_texture = new Texture2D(
                 base.Settings.TilesX * base.Settings.TileResolution,
                 base.Settings.TilesY * base.Settings.TileResolution,
-                TextureFormat.RGBA32,
+                base.Settings.TextureFormat,
                 false);
             m_texture.name = "TileMapTexture";
 

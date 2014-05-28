@@ -30,6 +30,12 @@ namespace UnityTileMap
         [SerializeField]
         public float TileSize = 1f;
 
+        /// <summary>
+        /// The format of the texture built for the mesh.
+        /// </summary>
+        [SerializeField]
+        public TextureFormat TextureFormat = TextureFormat.RGBA32;
+
         [SerializeField]
         public MeshMode MeshMode = MeshMode.SingleQuad;
 
@@ -49,13 +55,18 @@ namespace UnityTileMap
         {
         }
 
-        public TileMeshSettings(int tilesX, int tilesY, int tileResolution, float tileSize, MeshMode meshMode)
+        public TileMeshSettings(int tilesX, int tilesY, int tileResolution, float tileSize, MeshMode meshMode) : this(tilesX, tilesY, tileResolution, tileSize, meshMode, TextureFormat.RGBA32)
+        {
+        }
+
+        public TileMeshSettings(int tilesX, int tilesY, int tileResolution, float tileSize, MeshMode meshMode, TextureFormat textureFormat)
         {
             TilesX = tilesX;
             TilesY = tilesY;
             TileResolution = tileResolution;
             TileSize = tileSize;
             MeshMode = meshMode;
+            TextureFormat = textureFormat;
         }
 
         public override bool Equals(object obj)
@@ -65,12 +76,16 @@ namespace UnityTileMap
             var o = obj as TileMeshSettings;
             if (o == null)
                 return false;
-            return TilesX == o.TilesX && TilesY == o.TilesY && TileResolution == o.TileResolution && TileSize == o.TileSize && MeshMode == o.MeshMode;
+            return TilesX == o.TilesX && TilesY == o.TilesY &&
+                   TileResolution == o.TileResolution && TileSize == o.TileSize &&
+                   MeshMode == o.MeshMode && TextureFormat == o.TextureFormat;
         }
 
         public override int GetHashCode()
         {
-            return TilesX.GetHashCode() ^ TilesY.GetHashCode() ^ TileResolution.GetHashCode() ^ TileSize.GetHashCode() ^ MeshMode.GetHashCode();
+            return TilesX.GetHashCode() ^ TilesY.GetHashCode() ^
+                   TileResolution.GetHashCode() ^ TileSize.GetHashCode() ^
+                   MeshMode.GetHashCode() ^ TextureFormat.GetHashCode();
         }
     }
 }
