@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 
 [Serializable]
-internal class Grid<T> : IEnumerable<T>
+public class Grid<T> : IEnumerable<T>
 {
     private static readonly T[] Empty = new T[] {};
 
