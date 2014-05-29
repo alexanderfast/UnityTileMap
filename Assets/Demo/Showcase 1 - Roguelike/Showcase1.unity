@@ -145,6 +145,7 @@ GameObject:
   m_Component:
   - 4: {fileID: 1727741017}
   - 114: {fileID: 1727741016}
+  - 131: {fileID: 1727741018}
   m_Layer: 0
   m_Name: SceneFader
   m_TagString: Untagged
@@ -176,6 +177,25 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
+--- !u!131 &1727741018
+GUITexture:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1727741015}
+  m_Enabled: 1
+  m_Texture: {fileID: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: .5}
+  m_PixelInset:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 0
+    height: 0
+  m_LeftBorder: 0
+  m_RightBorder: 0
+  m_TopBorder: 0
+  m_BottomBorder: 0
 --- !u!1 &1971078461
 GameObject:
   m_ObjectHideFlags: 0
