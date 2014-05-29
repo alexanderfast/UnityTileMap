@@ -19,7 +19,7 @@ public class PlayerBehaviour : MonoBehaviour
         m_levelBehaviour = tileMapGameObject.GetComponent<LevelBehaviour>();
         if (m_levelBehaviour == null)
             Debug.LogError("LevelBehaviour not found");
-        m_sceneFadeInOut = GameObject.Find("ScreenFader").GetComponent<SceneFadeInOut>();
+        m_sceneFadeInOut = GameObject.Find("SceneFader").GetComponent<SceneFadeInOut>();
         if (m_sceneFadeInOut == null)
             Debug.LogError("SceneFadeInOut not found");
     }
