@@ -32,9 +32,17 @@ namespace UnityTileMap
 
         /// <summary>
         /// The format of the texture built for the mesh.
+        /// Only used in SingleQuad mode.
         /// </summary>
         [SerializeField]
         public TextureFormat TextureFormat = TextureFormat.RGBA32;
+
+        /// <summary>
+        /// The filter mode of the texture built for the mesh.
+        /// Only used in SingleQuad mode.
+        /// </summary>
+        [SerializeField]
+        public FilterMode TextureFilterMode = FilterMode.Point;
 
         [SerializeField]
         public MeshMode MeshMode = MeshMode.SingleQuad;

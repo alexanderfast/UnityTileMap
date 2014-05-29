@@ -35,6 +35,7 @@ public class TileMapBehaviourInspector : Editor
     private float m_tileSize;
     private MeshMode m_meshMode;
     private TextureFormat m_textureFormat;
+    private FilterMode m_textureFilterMode;
     private bool m_activeInEditMode;
 
     private Vector3 m_mouseHitPos = -Vector3.one;
@@ -88,7 +89,13 @@ public class TileMapBehaviourInspector : Editor
                 new GUIContent("Tile Size", "The size of one tile in Unity units"),
                 m_tileSize);
             m_meshMode = (MeshMode)EditorGUILayout.EnumPopup("Mesh Mode", m_meshMode);
-            m_textureFormat = (TextureFormat)EditorGUILayout.EnumPopup("Texture Format", m_textureFormat);
+
+            // these settings only apply to the single quad mode mesh
+            if (m_meshMode == MeshMode.SingleQuad)
+            {
+                m_textureFormat = (TextureFormat)EditorGUILayout.EnumPopup("Texture Format", m_textureFormat);
+                m_textureFilterMode = (FilterMode)EditorGUILayout.EnumPopup("Filter Mode", m_textureFilterMode);
+            }
 
             if (GUILayout.Button("Create/Recreate Mesh"))
             {

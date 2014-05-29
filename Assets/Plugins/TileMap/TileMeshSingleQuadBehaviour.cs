@@ -135,6 +135,8 @@ namespace UnityTileMap
                 base.Settings.TextureFormat,
                 false);
             m_texture.name = "TileMapTexture";
+            m_texture.filterMode = base.Settings.TextureFilterMode;
+            m_texture.wrapMode = TextureWrapMode.Clamp;
 
             MaterialTexture = m_texture;
         }
