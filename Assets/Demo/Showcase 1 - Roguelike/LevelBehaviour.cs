@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityTileMap;
+using Random = UnityEngine.Random;
 
 public class LevelBehaviour : MonoBehaviour
 {
@@ -9,8 +11,8 @@ public class LevelBehaviour : MonoBehaviour
     public int SizeY = 16;
 
     private TileMapBehaviour m_tileMap;
-    private Dictionary<TileType, int> m_tiles;
     private Grid<TileType> m_grid;
+    private TileEnumMapper<TileType> m_tiles;
 
     private void Awake()
     {
@@ -36,11 +38,11 @@ public class LevelBehaviour : MonoBehaviour
         m_tileMap.MeshSettings = settings;
 
         // Map type of tile to sprite
-        m_tiles = new Dictionary<TileType, int>();
-        m_tiles[TileType.Wall] = m_tileMap.TileSheet.Lookup("Wall2");
-        m_tiles[TileType.Floor] = m_tileMap.TileSheet.Lookup("Floor");
-        m_tiles[TileType.StairsUp] = m_tileMap.TileSheet.Lookup("StairsUp");
-        m_tiles[TileType.StairsDown] = m_tileMap.TileSheet.Lookup("StairsDown");
+        m_tiles = new TileEnumMapper<TileType>(m_tileMap);
+        m_tiles.Map(TileType.Wall, "Wall2");
+        m_tiles.Map(TileType.Floor, "Floor");
+        m_tiles.Map(TileType.StairsUp, "StairsUp");
+        m_tiles.Map(TileType.StairsDown, "StairsDown");
     }
 
     private void Start()
@@ -67,7 +69,7 @@ public class LevelBehaviour : MonoBehaviour
                 if (type == TileType.Empty)
                     m_tileMap.PaintTile(x, y, new Color(0, 0, 0, 0));
                 else
-                    m_tileMap[x, y] = m_tiles[type];
+                    m_tileMap[x, y] = m_tiles.GetId(type);
             }
         }
 
@@ -79,21 +81,14 @@ public class LevelBehaviour : MonoBehaviour
 
     public TileType GetTile(int x, int y)
     {
-        // TODO need a better way to do reverse lookup
-        int tile = m_tileMap[x, y];
-        foreach (var pair in m_tiles)
-        {
-            if (pair.Value == tile)
-                return pair.Key;
-        }
-        throw new KeyNotFoundException(tile.ToString());
+        return m_tiles.GetType(m_tileMap[x, y]);
     }
 
     // Returns true if the player can walk on this tile.
     public bool IsWalkeable(int x, int y)
     {
         int tile = m_tileMap[x, y];
-        return tile != m_tiles[TileType.Wall];
+        return tile != m_tiles.GetId(TileType.Wall);
     }
 
     public Vector2 FindTile(TileType tileType)
