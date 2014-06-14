@@ -6,7 +6,7 @@ namespace UnityTileMap
 {
     // TODO this class is supposed to handle the logic for splitting up the tilemap into parts, but its currently just an empty shell
     // TODO rename to TileChunkManager or something better
-    public class TileMeshGrid
+    public class TileChunkManager
     {
         private const string ChunkNameFormat = "Mesh@{0},{1}";
 

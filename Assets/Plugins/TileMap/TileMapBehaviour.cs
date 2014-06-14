@@ -19,7 +19,7 @@ namespace UnityTileMap
         [SerializeField]
         private bool m_activeInEditMode;
 
-        private TileMeshGrid m_meshGrid;
+        private TileChunkManager m_chunkManager;
 
         /// <summary>
         /// When ActiveInEditMode the mesh for the tilemap will be created and rendered in edit mode.
@@ -51,7 +51,7 @@ namespace UnityTileMap
             get { return m_tileMeshSettings; }
             set
             {
-                MeshGrid.Settings = value;
+                ChunkManager.Settings = value;
                 m_tileMeshSettings = value;
                 m_tileMapData.SetSize(m_tileMeshSettings.TilesX, m_tileMeshSettings.TilesY);
             }
@@ -62,23 +62,23 @@ namespace UnityTileMap
             get { return m_tileSheet; }
         }
 
-        private TileMeshGrid MeshGrid
+        private TileChunkManager ChunkManager
         {
             get
             {
-                if (m_meshGrid == null)
+                if (m_chunkManager == null)
                 {
                     Debug.Log("Recreating TileMeshGrid");
-                    m_meshGrid = new TileMeshGrid();
-                    m_meshGrid.Initialize(this, m_tileMeshSettings);
+                    m_chunkManager = new TileChunkManager();
+                    m_chunkManager.Initialize(this, m_tileMeshSettings);
                 }
-                return m_meshGrid;
+                return m_chunkManager;
             }
         }
         
         public bool HasMesh
         {
-            get { return MeshGrid.Chunk != null; }
+            get { return ChunkManager.Chunk != null; }
         }
 
         protected virtual void Awake()
@@ -89,10 +89,10 @@ namespace UnityTileMap
             if (m_tileSheet == null)
                 m_tileSheet = ScriptableObject.CreateInstance<TileSheet>();
 
-            if (m_meshGrid == null)
+            if (m_chunkManager == null)
             {
-                m_meshGrid = new TileMeshGrid();
-                m_meshGrid.Initialize(this, m_tileMeshSettings);
+                m_chunkManager = new TileChunkManager();
+                m_chunkManager.Initialize(this, m_tileMeshSettings);
             }
 
             if (m_tileMapData == null)
@@ -119,10 +119,10 @@ namespace UnityTileMap
         public void CreateMesh()
         {
             // initialize mesh grid
-            if (!MeshGrid.Initialized)
-                MeshGrid.Initialize(this, m_tileMeshSettings);
+            if (!ChunkManager.Initialized)
+                ChunkManager.Initialize(this, m_tileMeshSettings);
             else
-                MeshGrid.Settings = m_tileMeshSettings;
+                ChunkManager.Settings = m_tileMeshSettings;
 
             // restore tilemap data
             for (int x = 0; x < m_tileMapData.SizeX; x++)
@@ -139,7 +139,7 @@ namespace UnityTileMap
 
         public void DestroyMesh()
         {
-            MeshGrid.DeleteAllChunks();
+            ChunkManager.DeleteAllChunks();
         }
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace UnityTileMap
         /// </summary>
         public Rect GetTileBoundsLocal(int x, int y)
         {
-            return MeshGrid.Chunk.GetTileBoundsLocal(x, y);
+            return ChunkManager.Chunk.GetTileBoundsLocal(x, y);
         }
 
         /// <summary>
@@ -157,12 +157,12 @@ namespace UnityTileMap
         /// </summary>
         public Rect GetTileBoundsWorld(int x, int y)
         {
-            return MeshGrid.Chunk.GetTileBoundsWorld(x, y);
+            return ChunkManager.Chunk.GetTileBoundsWorld(x, y);
         }
 
         public void PaintTile(int x, int y, Color color)
         {
-            var child = MeshGrid.Chunk;
+            var child = ChunkManager.Chunk;
             if (child == null)
                 throw new InvalidOperationException("MeshGrid has not yet been created.");
             var singleQuad = child as TileMeshSingleQuadBehaviour;
@@ -175,13 +175,13 @@ namespace UnityTileMap
         {
             if (sprite == null)
                 throw new ArgumentNullException("sprite");
-            MeshGrid.Chunk.SetTile(x, y, sprite);
+            ChunkManager.Chunk.SetTile(x, y, sprite);
         }
 
         private void SetTile(int x, int y, int id)
         {
             var sprite = m_tileSheet.Get(id);
-            MeshGrid.Chunk.SetTile(x, y, sprite);
+            ChunkManager.Chunk.SetTile(x, y, sprite);
         }
     }
 }
