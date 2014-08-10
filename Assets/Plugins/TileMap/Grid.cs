@@ -7,8 +7,6 @@ using System.Linq;
 [Serializable]
 public class Grid<T> : IEnumerable<T>
 {
-    private static readonly T[] Empty = new T[] {};
-
     [SerializeField]
     private int m_sizeX = -1;
 
@@ -87,7 +85,7 @@ public class Grid<T> : IEnumerable<T>
     public IEnumerator<T> GetEnumerator()
     {
         if (m_data == null)
-            return ((IEnumerable<T>)Empty).GetEnumerator();
+				return Enumerable.Empty<T>().GetEnumerator();
         return ((IEnumerable<T>)m_data).GetEnumerator();
     }
 
