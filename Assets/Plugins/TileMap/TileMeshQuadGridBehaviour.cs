@@ -29,11 +29,7 @@ namespace UnityTileMap
             var uv = GetComponent<MeshFilter>().sharedMesh.uv;
             var r = sprite.textureRect;
 
-            // vertices going counter clockwise
-            // 2--3
-            // | /|
-            // |/ |
-            // 0--1
+            // assign four uv coordinates to change the texture of one tile (one quad, two triangels)
             uv[quadIndex] = ToUv(new Vector2(r.xMin, r.yMin), sprite.texture);
             uv[quadIndex + 1] = ToUv(new Vector2(r.xMax, r.yMin), sprite.texture);
             uv[quadIndex + 2] = ToUv(new Vector2(r.xMin, r.yMax), sprite.texture);
