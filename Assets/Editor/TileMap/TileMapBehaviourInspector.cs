@@ -333,11 +333,11 @@ public class TileMapBehaviourInspector : Editor
 		Handles.color = Color.gray;
 		for (float i = 1; i < gridWidth; i++)
 		{
-			Handles.DrawLine(p + new Vector3(i, 0), new Vector3(i, gridHeight));
+			Handles.DrawLine(new Vector3(i, 0), new Vector3(i, gridHeight));
 		}
 		for (float i = 1; i < gridHeight; i++)
 		{
-			Handles.DrawLine(p + new Vector3(0, i), new Vector3(gridWidth, i));
+			Handles.DrawLine(new Vector3(0, i), new Vector3(gridWidth, i));
 		}
 		Handles.color = Color.white;
 		Handles.DrawLine(Vector3.zero, new Vector3(gridWidth, 0));
