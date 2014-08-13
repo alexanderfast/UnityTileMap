@@ -13,4 +13,5 @@ It provides a method to stitch together many Sprites into a single large texture
 ## Credits
 
  * In-scene tile editing by [EddyEpic](https://github.com/EddyEpic).
+ * Minor [fixes](https://github.com/mizipzor/UnityTileMap/pulls?q=is%3Apr+is%3Aclosed+author%3Arakkarage) by [Rakkarage](https://github.com/rakkarage).
  * Based on the technique in Quill18's [YouTube video](https://www.youtube.com/playlist?list=PLbghT7MmckI4qGA0Wm_TZS8LVrqS47I9R).
