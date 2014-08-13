@@ -330,7 +330,6 @@ public class TileMapBehaviourInspector : Editor
         float gridWidth = m_tilesX * m_tileSize;
         float gridHeight = m_tilesY * m_tileSize;
 
-		var p = Vector3.zero;
 		Handles.color = Color.gray;
 		for (float i = 1; i < gridWidth; i++)
 		{
@@ -341,10 +340,10 @@ public class TileMapBehaviourInspector : Editor
 			Handles.DrawLine(p + new Vector3(0, i), p + new Vector3(gridWidth, i));
 		}
 		Handles.color = Color.white;
-		Handles.DrawLine(p, p + new Vector3(gridWidth, 0));
-		Handles.DrawLine(p, p + new Vector3(0, gridHeight));
-		Handles.DrawLine(p + new Vector3(gridWidth, 0), p + new Vector3(gridWidth, gridHeight));
-		Handles.DrawLine(p + new Vector3(0, gridHeight), p + new Vector3(gridWidth, gridHeight));
+		Handles.DrawLine(Vector3.zero, new Vector3(gridWidth, 0));
+		Handles.DrawLine(Vector3.zero, new Vector3(0, gridHeight));
+		Handles.DrawLine(new Vector3(gridWidth, 0), new Vector3(gridWidth, gridHeight));
+		Handles.DrawLine(new Vector3(0, gridHeight), new Vector3(gridWidth, gridHeight));
     }
 
     private void HandleMouseEvents()
