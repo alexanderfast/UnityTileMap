@@ -330,21 +330,21 @@ public class TileMapBehaviourInspector : Editor
         float gridWidth = m_tilesX * m_tileSize;
         float gridHeight = m_tilesY * m_tileSize;
 
-        Handles.color = Color.blue;
-        for (int x = 0; x <= m_tilesX; x++)
-        {
-            float xPos = (x * m_tileSize) + m_tileMap.transform.position.x;
-            Handles.DrawLine(new Vector3(xPos, m_tileMap.transform.position.y, m_tileMap.transform.position.z),
-                             new Vector3(xPos, m_tileMap.transform.position.y + gridWidth, m_tileMap.transform.position.z));
-        }
-
-        for (int y = 0; y <= m_tilesY; y++)
-        {
-            float yPos = (y * m_tileSize) + m_tileMap.transform.position.y;
-            Handles.DrawLine(new Vector3(m_tileMap.transform.position.x, yPos, m_tileMap.transform.position.z),
-                             new Vector3(m_tileMap.transform.position.x + gridHeight, yPos, m_tileMap.transform.position.z));
-        }
-        Handles.color = Color.white;
+		var p = Vector3.zero;
+		Handles.color = Color.gray;
+		for (float i = 1; i < gridWidth; i++)
+		{
+			Handles.DrawLine(p + new Vector3(i, 0), p + new Vector3(i, gridHeight));
+		}
+		for (float i = 1; i < gridHeight; i++)
+		{
+			Handles.DrawLine(p + new Vector3(0, i), p + new Vector3(gridWidth, i));
+		}
+		Handles.color = Color.white;
+		Handles.DrawLine(p, p + new Vector3(gridWidth, 0));
+		Handles.DrawLine(p, p + new Vector3(0, gridHeight));
+		Handles.DrawLine(p + new Vector3(gridWidth, 0), p + new Vector3(gridWidth, gridHeight));
+		Handles.DrawLine(p + new Vector3(0, gridHeight), p + new Vector3(gridWidth, gridHeight));
     }
 
     private void HandleMouseEvents()
