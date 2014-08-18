@@ -57,7 +57,7 @@ namespace UnityTileMap
             return GetEntry(id) != null;
         }
 
-        public void Add(Sprite sprite)
+        public int Add(Sprite sprite)
         {
             if (sprite == null)
                 throw new ArgumentNullException("sprite");
@@ -67,6 +67,7 @@ namespace UnityTileMap
                 Sprite = sprite
             };
             m_tiles.Add(entry);
+            return entry.Id;
         }
 
         public void Remove(int id)

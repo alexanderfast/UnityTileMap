@@ -71,7 +71,7 @@ namespace UnityTileMap
             var size = m_settings.TileSize;
             return new Rect(
                 x * size,
-                (y + 1) * size,
+                y * size,
                 size,
                 size);
         }

@@ -1,11 +1,14 @@
 using System;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace UnityTileMap
 {
     [ExecuteInEditMode]
     [Serializable]
-    public class TileMapBehaviour : MonoBehaviour
+    public class TileMapBehaviour : MonoBehaviour, IEnumerable<KeyValuePair<Vector2Int, int>>
     {
         [SerializeField]
         private TileMapData m_tileMapData;
@@ -20,6 +23,8 @@ namespace UnityTileMap
         private bool m_activeInEditMode;
 
         private TileChunkManager m_chunkManager;
+
+        private TileMapVisibilityBehaviour m_visibility;
 
         /// <summary>
         /// When ActiveInEditMode the mesh for the tilemap will be created and rendered in edit mode.
@@ -160,6 +165,31 @@ namespace UnityTileMap
             return ChunkManager.Chunk.GetTileBoundsWorld(x, y);
         }
 
+        // TODO this method can currently only be called from code, would be nice with gui checkbox
+        // TODO returning the behiaviour like this doesnt feel pretty
+        public TileMapVisibilityBehaviour EnableVisibility()
+        {
+            //if (m_visibility != null)
+            //    throw new InvalidOperationException("Visibility already enabled");
+
+            if (m_visibility == null)
+            {
+                var gameObject = new GameObject("TileMapVisibility", typeof(TileMapVisibilityBehaviour));
+                gameObject.transform.parent = transform;
+                gameObject.transform.localRotation = Quaternion.identity;
+                gameObject.transform.localPosition = new Vector3(0, -2f, transform.position.z - 1f); // place above tilemap
+                gameObject.transform.localScale = Vector3.one;
+
+                m_visibility = gameObject.GetComponent<TileMapVisibilityBehaviour>();
+            }
+            return m_visibility;
+        }
+
+        public bool IsInBounds(int x, int y)
+        {
+            return m_tileMapData.IsInBounds(x, y);
+        }
+
         public void PaintTile(int x, int y, Color color)
         {
             var child = ChunkManager.Chunk;
@@ -182,6 +212,22 @@ namespace UnityTileMap
         {
             var sprite = m_tileSheet.Get(id);
             ChunkManager.Chunk.SetTile(x, y, sprite);
+        }
+
+        public IEnumerator<KeyValuePair<Vector2Int, int>> GetEnumerator()
+        {
+            for (int x = 0; x < m_tileMeshSettings.TilesX; x++)
+            {
+                for (int y = 0; y < m_tileMeshSettings.TilesY; y++)
+                {
+                    yield return new KeyValuePair<Vector2Int, int>(new Vector2Int(x, y), m_tileMapData[x, y]);
+                }
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

@@ -61,6 +61,15 @@ public class Grid<T> : IEnumerable<T>
         }
     }
 
+    public bool IsInBounds(int x, int y)
+    {
+        if (m_data == null)
+            throw new InvalidOperationException("Size has not been set");
+        if (x < 0 || y < 0 || x >= m_sizeX || y >= m_sizeY)
+            return false;
+        return true;
+    }
+
     private int CoordToIndex(int x, int y)
     {
         return (y * m_sizeX) + x;

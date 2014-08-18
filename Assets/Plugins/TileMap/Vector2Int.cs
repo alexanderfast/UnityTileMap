@@ -1,4 +1,6 @@
-﻿public class Vector2Int
+﻿using UnityEngine;
+
+public class Vector2Int
 {
     public int x;
     public int y;
@@ -7,6 +9,11 @@
     {
         this.x = x;
         this.y = y;
+    }
+
+    public Vector2 ToVector2()
+    {
+        return new Vector2(x, y);
     }
 
     public override string ToString()
@@ -44,5 +51,15 @@
     public static bool operator !=(Vector2Int left, Vector2Int right)
     {
         return !Equals(left, right);
+    }
+
+    public static Vector2Int operator +(Vector2Int left, Vector2Int right)
+    {
+        return new Vector2Int(left.x + right.x, left.y + right.y);
+    }
+
+    public static Vector2Int operator -(Vector2Int left, Vector2Int right)
+    {
+        return new Vector2Int(left.x - right.x, left.y - right.y);
     }
 }
