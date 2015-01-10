@@ -22,8 +22,17 @@ namespace UnityTileMap
                     throw new ArgumentNullException("value");
                 if (base.Settings != null && base.Settings.Equals(value))
                     return;
+
+                bool resolutionChanged = false;
+
+                if (base.Settings != null)
+                {
+                    resolutionChanged = base.Settings.TileResolution != value.TileResolution;
+                }
+
                 base.Settings = value;
-                CreateTexture();
+
+                CreateTexture(! resolutionChanged);
             }
         }
 
@@ -127,16 +136,30 @@ namespace UnityTileMap
             return mesh;
         }
 
-        private void CreateTexture()
+        private void CreateTexture(bool keepData = true)
         {
-            m_texture = new Texture2D(
+            Texture2D texture = new Texture2D(
                 base.Settings.TilesX * base.Settings.TileResolution,
                 base.Settings.TilesY * base.Settings.TileResolution,
                 base.Settings.TextureFormat,
                 false);
-            m_texture.name = "TileMapTexture";
-            m_texture.filterMode = base.Settings.TextureFilterMode;
-            m_texture.wrapMode = TextureWrapMode.Clamp;
+            texture.name = "TileMapTexture";
+            texture.filterMode = base.Settings.TextureFilterMode;
+            texture.wrapMode = TextureWrapMode.Clamp;
+
+            if (m_texture && keepData)
+            {
+                int width = Mathf.Clamp(m_texture.width, 0, texture.width);
+                int height = Mathf.Clamp(m_texture.height, 0, texture.height);
+
+                Color[] colors = m_texture.GetPixels(0, 0, width, height);
+
+                texture.SetPixels(0, 0, width, height, colors);
+
+                texture.Apply();
+            }
+
+            m_texture = texture;
 
             MaterialTexture = m_texture;
         }

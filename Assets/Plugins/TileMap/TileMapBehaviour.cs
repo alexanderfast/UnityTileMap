@@ -20,7 +20,7 @@ namespace UnityTileMap
         private TileSheet m_tileSheet;
 
         [SerializeField]
-        private bool m_activeInEditMode;
+        private bool m_activeInEditMode = true;
 
         private TileChunkManager m_chunkManager;
 
@@ -57,6 +57,15 @@ namespace UnityTileMap
             set
             {
                 ChunkManager.Settings = value;
+
+                if (m_tileMeshSettings != null)
+                {
+                    if (m_tileMeshSettings.TileResolution != value.TileResolution)
+                    {
+                        m_tileMapData.Clear();
+                    }
+                }
+
                 m_tileMeshSettings = value;
                 m_tileMapData.SetSize(m_tileMeshSettings.TilesX, m_tileMeshSettings.TilesY);
             }
@@ -65,6 +74,19 @@ namespace UnityTileMap
         public TileSheet TileSheet
         {
             get { return m_tileSheet; }
+        }
+
+        public int TileCount
+        {
+            get
+            {
+                return m_tileMapData.Count;
+            }
+        }
+
+        public void ClearTiles()
+        {
+            m_tileMapData.Clear();
         }
 
         private TileChunkManager ChunkManager

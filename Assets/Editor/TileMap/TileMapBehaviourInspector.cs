@@ -5,6 +5,10 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityTileMap;
 
+// For obtaining list of sorting layers.
+using UnityEditorInternal;
+using System.Reflection;
+
 [Serializable]
 [CustomEditor(typeof(TileMapBehaviour))]
 public class TileMapBehaviourInspector : Editor
@@ -13,7 +17,10 @@ public class TileMapBehaviourInspector : Editor
     private const float FLOAT_ITEM_MARGIN = 6f;
 
     [SerializeField]
-    private bool m_showMapSettings;
+    private bool m_showSortSettings = true;
+
+    [SerializeField]
+    private bool m_showMapSettings = true;
 
     [SerializeField]
     private bool m_showSprites;
@@ -39,7 +46,7 @@ public class TileMapBehaviourInspector : Editor
     private bool m_activeInEditMode;
 
     private Vector3 m_mouseHitPos = -Vector3.one;
-    private int m_setTileID = 0;
+    private int m_setTileID = -1;
     private Rect m_tilePickerPosition = new Rect(0f, 21f, 256f, 320f);
     private Vector2 m_tilePickerScroll = Vector2.zero;
     private int m_tilePickerXCount = 4;
@@ -62,6 +69,14 @@ public class TileMapBehaviourInspector : Editor
         m_activeInEditMode = m_tileMap.ActiveInEditMode;
     }
 
+    // Taken from: http://answers.unity3d.com/questions/585108/how-do-you-access-sorting-layers-via-scripting.html
+    public string[] GetSortingLayerNames()
+    {
+        Type internalEditorUtilityType = typeof(InternalEditorUtility);
+        PropertyInfo sortingLayersProperty = internalEditorUtilityType.GetProperty("sortingLayerNames", BindingFlags.Static | BindingFlags.NonPublic);
+        return (string[])sortingLayersProperty.GetValue(null, new object[0]);
+    }
+
     public override void OnInspectorGUI()
     {
         //		base.OnInspectorGUI();
@@ -70,11 +85,6 @@ public class TileMapBehaviourInspector : Editor
         if (m_showMapSettings)
         {
             m_activeInEditMode = EditorGUILayout.Toggle("Active In Edit Mode", m_activeInEditMode);
-            if (m_tileMap.ActiveInEditMode != m_activeInEditMode)
-            {
-                m_tileMap.ActiveInEditMode = m_activeInEditMode;
-                OnSceneGUI(); // force redraw map editor box
-            }
 
             m_tilesX = EditorGUILayout.IntField(
                 new GUIContent("Tiles X", "The number of tiles on the X axis"),
@@ -85,6 +95,13 @@ public class TileMapBehaviourInspector : Editor
             m_tileResolution = EditorGUILayout.IntField(
                 new GUIContent("Tile Resolution", "The number of pixels along each axis on one tile"),
                 m_tileResolution);
+
+            if (m_tileResolution != m_tileMap.MeshSettings.TileResolution)
+            {
+                EditorGUILayout.HelpBox("Changing tile resolution will clear the current tile setup.\n" +
+                                        string.Format("Current tile resolution is {0}.", m_tileMap.MeshSettings.TileResolution), MessageType.Warning);
+            }
+
             m_tileSize = EditorGUILayout.FloatField(
                 new GUIContent("Tile Size", "The size of one tile in Unity units"),
                 m_tileSize);
@@ -99,14 +116,101 @@ public class TileMapBehaviourInspector : Editor
 
             if (GUILayout.Button("Create/Recreate Mesh"))
             {
-                m_tileMap.MeshSettings = new TileMeshSettings(m_tilesX, m_tilesY, m_tileResolution, m_tileSize, m_meshMode, m_textureFormat);
+                bool canDelete = true;
 
-                // if settings didnt change the mesh wouldnt be created, force creation
-                if (!m_tileMap.HasMesh)
-                    m_tileMap.CreateMesh();
+                if (m_tileResolution != m_tileMap.MeshSettings.TileResolution)
+                {
+                    canDelete = ShowTileDeletionWarning();
+                }
+
+                if (canDelete)
+                {
+                    m_tileMap.MeshSettings = new TileMeshSettings(m_tilesX, m_tilesY, m_tileResolution, m_tileSize, m_meshMode, m_textureFormat);
+                    
+                    // if settings didnt change the mesh wouldnt be created, force creation
+                    if (!m_tileMap.HasMesh)
+                    {
+                        m_tileMap.CreateMesh();
+                    }
+                    
+                    m_activeInEditMode = true;
+                }
             }
             if (GUILayout.Button("Destroy Mesh (keep data)"))
+            {
                 m_tileMap.DestroyMesh();
+
+                m_activeInEditMode = false;
+            }
+
+            if (GUILayout.Button("Clear"))
+            {
+                if (ShowTileDeletionWarning())
+                {
+                    m_tileMap.DestroyMesh();
+                    m_tileMap.ClearTiles();
+                    
+                    m_activeInEditMode = false;
+                }
+            }
+
+            if (m_tileMap.ActiveInEditMode != m_activeInEditMode)
+            {
+                m_tileMap.ActiveInEditMode = m_activeInEditMode;
+                OnSceneGUI(); // force redraw map editor box
+            }
+        }
+
+        m_showSortSettings = EditorGUILayout.Foldout(m_showSortSettings, "Sort Settings");
+        if (m_showSortSettings)
+        {
+            TileMeshBehaviour mesh = m_tileMap.GetComponentInChildren<TileMeshBehaviour>();
+
+            // When first creating tile map or after deleting the mesh,
+            // it will not be accessible until it's created by user.
+            if (mesh != null && mesh.renderer != null)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUI.BeginChangeCheck();
+
+                string[] sortingLayers = GetSortingLayerNames();
+
+                int currentLayer = 0;
+
+                for (int i = 0; i < sortingLayers.Length; i++)
+                {
+                    if (sortingLayers[i] == mesh.renderer.sortingLayerName)
+                    {
+                        currentLayer = i;
+                        break;
+                    }
+                }
+
+                int chosenLayer = EditorGUILayout.Popup("Sorting Layer Name", currentLayer, sortingLayers);
+
+                if (EditorGUI.EndChangeCheck() || mesh.renderer.sortingLayerName.Length == 0)
+                {
+                    mesh.renderer.sortingLayerName = sortingLayers[chosenLayer];
+                }
+                
+                EditorGUILayout.EndHorizontal();
+                
+                EditorGUILayout.BeginHorizontal();
+                EditorGUI.BeginChangeCheck();
+                
+                int order = EditorGUILayout.IntField("Sorting Order", mesh.renderer.sortingOrder);
+                
+                if (EditorGUI.EndChangeCheck())
+                {
+                    mesh.renderer.sortingOrder = order;
+                }
+                
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("Mesh has not been created.\nPlease use 'Create/Recreate Mesh' button in the Map Settings.", MessageType.Info, true);
+            }
         }
 
         m_showPickerSettings = EditorGUILayout.Foldout(m_showPickerSettings, "Tile Picker Settings");
@@ -126,7 +230,7 @@ public class TileMapBehaviourInspector : Editor
         }
 
         bool prominentImportArea = m_tileSheet.Ids.Count() == 0;
-        m_showSprites = EditorGUILayout.Foldout(m_showSprites || prominentImportArea, "Sprites:");
+        m_showSprites = EditorGUILayout.Foldout(m_showSprites || prominentImportArea, "Sprites");
         if (m_showSprites || prominentImportArea)
         {
             ShowImportDropArea();
@@ -160,6 +264,13 @@ public class TileMapBehaviourInspector : Editor
         }
 
         EditorUtility.SetDirty(this);
+    }
+
+    private bool ShowTileDeletionWarning()
+    {
+        return EditorUtility.DisplayDialog("Really delete?", 
+                                           String.Format("{0} manually set tile(s) will be removed.", m_tileMap.TileCount), 
+                                           "Yes", "No");
     }
 
     public void ShowSprite(Sprite sprite)
@@ -283,6 +394,13 @@ public class TileMapBehaviourInspector : Editor
 
     private void OnSceneGUI()
     {
+        TileMeshBehaviour mesh = m_tileMap.GetComponentInChildren<TileMeshBehaviour>();
+
+        if (mesh != null)
+        {
+            m_tileMap.GetComponentInChildren<TileMeshBehaviour>().transform.localPosition = Vector3.zero;
+        }
+
         // TODO the scene gui should only be enabled if m_tileMap.ActiveInEditMode, but I havent found a good way to toggle
         //if (!m_tileMap.ActiveInEditMode)
         //    return;
@@ -292,34 +410,50 @@ public class TileMapBehaviourInspector : Editor
         m_tilePickerPosition = GUILayout.Window(GUIUtility.GetControlID(FocusType.Passive), m_tilePickerPosition,
                                                 OnTilePickerWindow, new GUIContent("Select a Tile"));
         DrawGrid();
-        HandleMouseEvents();
+
+        if (m_activeInEditMode)
+        {
+            HandleMouseEvents();
+        }
     }
 
     private void OnTilePickerWindow(int id)
     {
         int[] ids = m_tileSheet.Ids.ToArray();
 
-        m_tilePickerScroll = EditorGUILayout.BeginScrollView(m_tilePickerScroll, GUIStyle.none, GUI.skin.verticalScrollbar);
+        if (ids.Length > 0)
         {
-            float itemSize = ((m_tilePickerPosition.width - FLOAT_PICKER_MARGIN) / m_tilePickerXCount) - FLOAT_ITEM_MARGIN;
-            for (int i = 0; i < ids.Length; i += m_tilePickerXCount)
+            m_tilePickerScroll = EditorGUILayout.BeginScrollView(m_tilePickerScroll, GUIStyle.none, GUI.skin.verticalScrollbar);
             {
-                EditorGUILayout.BeginHorizontal();
-                for (int c = 0; c < m_tilePickerXCount; c++)
+                float itemSize = ((m_tilePickerPosition.width - FLOAT_PICKER_MARGIN) / m_tilePickerXCount) - FLOAT_ITEM_MARGIN;
+                for (int i = 0; i < ids.Length; i += m_tilePickerXCount)
                 {
-                    if (i + c >= ids.Length)
-                        break;
-
-                    int index = i + c;
-                    GUIContent content = new GUIContent(GetThumbnail(m_tileSheet.Get(ids[index])));
-
-                    if (GUILayout.Toggle(m_setTileID == ids[index], content, GUI.skin.button, GUILayout.Width(itemSize), GUILayout.Height(itemSize)))
-                        m_setTileID = ids[index];
+                    EditorGUILayout.BeginHorizontal();
+                    for (int c = 0; c < m_tilePickerXCount; c++)
+                    {
+                        if (i + c >= ids.Length)
+                            break;
+                        
+                        int index = i + c;
+                        GUIContent content = new GUIContent(GetThumbnail(m_tileSheet.Get(ids[index])));
+                        
+                        if (GUILayout.Toggle(m_setTileID == ids[index], content, GUI.skin.button, GUILayout.Width(itemSize), GUILayout.Height(itemSize)))
+                            m_setTileID = ids[index];
+                    }
+                    EditorGUILayout.EndHorizontal();
                 }
-                EditorGUILayout.EndHorizontal();
+            }
+            EditorGUILayout.EndScrollView();
+
+            if (m_setTileID < 0)
+            {
+                EditorGUILayout.HelpBox("No tile selected.", MessageType.Warning);
             }
         }
-        EditorGUILayout.EndScrollView();
+        else
+        {
+            EditorGUILayout.HelpBox("No tiles available.\nPlease use 'Sprites' in the inspector to add tiles.", MessageType.Info);
+        }
 
         //GUI.DragWindow(new Rect(0f, 0f, m_tilePickerPosition.width, 21f));
         GUI.DragWindow(new Rect(0f, 0f, m_tilePickerPosition.width, m_tilePickerPosition.height));
@@ -330,24 +464,32 @@ public class TileMapBehaviourInspector : Editor
         float gridWidth = m_tilesX * m_tileSize;
         float gridHeight = m_tilesY * m_tileSize;
 
+        Vector2 position = m_tileMap.gameObject.transform.position;
+
         Handles.color = Color.gray;
         for (float i = 1; i < gridWidth; i++)
         {
-            Handles.DrawLine(new Vector3(i, 0), new Vector3(i, gridHeight));
+            Handles.DrawLine(new Vector3(i + position.x, position.y), new Vector3(i + position.x, gridHeight + position.y));
         }
         for (float i = 1; i < gridHeight; i++)
         {
-            Handles.DrawLine(new Vector3(0, i), new Vector3(gridWidth, i));
+            Handles.DrawLine(new Vector3(position.x, i + position.y), new Vector3(gridWidth + position.x, i + position.y));
         }
         Handles.color = Color.white;
-        Handles.DrawLine(Vector3.zero, new Vector3(gridWidth, 0));
-        Handles.DrawLine(Vector3.zero, new Vector3(0, gridHeight));
-        Handles.DrawLine(new Vector3(gridWidth, 0), new Vector3(gridWidth, gridHeight));
-        Handles.DrawLine(new Vector3(0, gridHeight), new Vector3(gridWidth, gridHeight));
+        Handles.DrawLine(position, new Vector3(gridWidth + position.x, position.y));
+        Handles.DrawLine(position, new Vector3(position.x, gridHeight + position.y));
+        Handles.DrawLine(new Vector3(gridWidth + position.x, position.y), new Vector3(gridWidth + position.x, gridHeight + position.y));
+        Handles.DrawLine(new Vector3(position.x, gridHeight + position.y), new Vector3(gridWidth + position.x, gridHeight + position.y));
     }
 
     private void HandleMouseEvents()
     {
+        // Do not process if no tile is selected
+        if (m_setTileID < 0)
+        {
+            return;
+        }
+
         Event e = Event.current;
         if ((e.type == EventType.MouseMove && e.modifiers == EventModifiers.Shift) || (e.type == EventType.MouseDown && e.button == 1))
         {
