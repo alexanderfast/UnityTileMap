@@ -77,6 +77,14 @@ public class LevelBehaviour : MonoBehaviour
         var stairs = FindTile(TileType.StairsUp);
         var playerBehaviour = GameObject.Find("Player").GetComponent<PlayerBehaviour>();
         playerBehaviour.SetTilePosition((int)stairs.x, (int)stairs.y);
+        playerBehaviour.renderer.sortingOrder = 1;
+
+        TileMeshBehaviour mesh = m_tileMap.GetComponentInChildren<TileMeshBehaviour>();
+
+        if (mesh != null)
+        {
+            mesh.renderer.sortingOrder = 0;
+        }
     }
 
     public TileType GetTile(int x, int y)
