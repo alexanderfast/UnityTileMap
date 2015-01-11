@@ -177,9 +177,9 @@ public class TileMapBehaviourInspector : Editor
 
                 int currentLayer = 0;
 
-                bool isLayerSet = mesh.renderer.sortingLayerName.Length >= 0;
+                bool isLayerSet = mesh.renderer.sortingLayerName.Length > 0;
 
-                if (isLayerSet)
+                if (! isLayerSet)
                 {
                     currentLayer = FindStringIndex(ref sortingLayers, "Default");
                 }
@@ -188,7 +188,7 @@ public class TileMapBehaviourInspector : Editor
                     currentLayer = FindStringIndex(ref sortingLayers, mesh.renderer.sortingLayerName);
                 }
 
-                int chosenLayer = EditorGUILayout.Popup("Sorting Layer Name", currentLayer, sortingLayers);
+                int chosenLayer = EditorGUILayout.Popup("Sorting Layer Name", Mathf.Max(currentLayer, 0), sortingLayers);
 
                 if (EditorGUI.EndChangeCheck() || ! isLayerSet)
                 {
@@ -270,18 +270,7 @@ public class TileMapBehaviourInspector : Editor
 
     private int FindStringIndex(ref string[] strings, string layer)
     {
-        int found = 0;
-
-        for (int i = 0; i < strings.Length; i++)
-        {
-            if (strings[i] == layer)
-            {
-                found = i;
-                break;
-            }
-        }
-
-        return found;
+        return Array.IndexOf(strings, layer);
     }
 
     private bool ShowTileDeletionWarning()
