@@ -94,7 +94,7 @@ public class PlayerBehaviour : MonoBehaviour
         m_x = x;
         m_y = y;
         var tileBounds = m_tileMap.GetTileBoundsWorld(x, y);
-        transform.position = new Vector3(tileBounds.xMin, tileBounds.yMin, transform.position.z);
+        transform.position = new Vector3(tileBounds.xMin, tileBounds.yMin + 1, transform.position.z);
 
         // If we walk onto the stairs down...
         if (m_levelBehaviour.GetTile(m_x, m_y) == TileType.StairsDown)
