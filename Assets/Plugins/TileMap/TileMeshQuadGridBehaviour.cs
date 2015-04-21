@@ -8,6 +8,7 @@ namespace UnityTileMap
     /// </summary>
     public class TileMeshQuadGridBehaviour : TileMeshBehaviour
     {
+        private Vector2[] _uv;
         public override void SetTile(int x, int y, Sprite sprite)
         {
             // TODO should be flagged in inspector when sprites are set up
@@ -26,15 +27,14 @@ namespace UnityTileMap
             // TODO seems like i cant modify the uv coordinates in place
 
             quadIndex *= 4;
-            var uv = GetComponent<MeshFilter>().sharedMesh.uv;
             var r = sprite.textureRect;
 
             // assign four uv coordinates to change the texture of one tile (one quad, two triangels)
-            uv[quadIndex] = ToUv(new Vector2(r.xMin, r.yMin), sprite.texture);
-            uv[quadIndex + 1] = ToUv(new Vector2(r.xMax, r.yMin), sprite.texture);
-            uv[quadIndex + 2] = ToUv(new Vector2(r.xMin, r.yMax), sprite.texture);
-            uv[quadIndex + 3] = ToUv(new Vector2(r.xMax, r.yMax), sprite.texture);
-            GetComponent<MeshFilter>().sharedMesh.uv = uv;
+            _uv[quadIndex] = ToUv(new Vector2(r.xMin, r.yMin), sprite.texture);
+            _uv[quadIndex + 1] = ToUv(new Vector2(r.xMax, r.yMin), sprite.texture);
+            _uv[quadIndex + 2] = ToUv(new Vector2(r.xMin, r.yMax), sprite.texture);
+            _uv[quadIndex + 3] = ToUv(new Vector2(r.xMax, r.yMax), sprite.texture);
+            GetComponent<MeshFilter>().sharedMesh.uv = _uv;
         }
 
         protected override Mesh CreateMesh()
@@ -47,7 +47,7 @@ namespace UnityTileMap
             var vertices = new Vector3[quads * 4];
             var triangles = new int[quads * 6];
             var normals = new Vector3[vertices.Length];
-            var uv = new Vector2[vertices.Length];
+            _uv = new Vector2[vertices.Length];
 
             for (int y = 0; y < tilesY; y++)
             {
@@ -82,7 +82,7 @@ namespace UnityTileMap
             for (int i = 0; i < vertices.Length; i++)
             {
                 normals[i] = Vector3.forward;
-                uv[i] = Vector2.zero; // uv are set by assigning a tile
+                _uv[i] = Vector2.zero; // uv are set by assigning a tile
             }
 
             var mesh = new Mesh
@@ -90,7 +90,7 @@ namespace UnityTileMap
                 vertices = vertices,
                 triangles = triangles,
                 normals = normals,
-                uv = uv,
+                uv = _uv,
                 name = "TileMapMesh"
             };
             return mesh;
